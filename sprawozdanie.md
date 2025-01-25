@@ -104,7 +104,7 @@ Algorytm implementuje wzorzec publish-subscribe z użyciem współbieżnych stru
 Przykładowe uruchomienie programu:
 
 ```sh
-$ ./queue_program
+$ gcc main.c && ./a.out
 ```
 
 Program tworzy kolejkę o rozmiarze 10 i uruchamia 30 wątków dodających wiadomości oraz 30 wątków pobierających wiadomości. Wątki synchronizują się za pomocą mutexów i zmiennych warunkowych, aby zapewnić poprawne działanie kolejki.
