@@ -6,6 +6,9 @@ date:     v1.0, 2024-01-20
 lang:     pl-PL
 ---
 
+Projekt jest dostępny w repozytorium pod adresem:
+<https://github.com/emnealyn/Publish-subscribe>.
+
 # Struktury danych
 
 W tym punkcie przedstawiam struktury danych zaprojektowane i użyte w implementacji. Opis uwzględnia prezentację istotnych zmiennych i możliwych wartości składowanych w nich.
