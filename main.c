@@ -4,7 +4,7 @@
 #include <time.h>
 #include <sys/wait.h>
 #include <stdlib.h>
-#include <unistd.h> // Include this header for usleep
+#include <unistd.h> 
 
 void* subscriber_thread(void* arg) {
     TQueue *queue = (TQueue*)arg;
@@ -26,7 +26,7 @@ void* subscriber_thread(void* arg) {
             continue;
         }
         
-        // int available = getAvailable(queue, thread_id); // Remove unused variable
+        // int available = getAvailable(queue, thread_id); 
         // printf("[R] Messages available for thread: %d\n", available);
 
         char *msg = (char*)getMsg(queue, thread_id);
@@ -50,7 +50,7 @@ void* subscriber_thread(void* arg) {
 
 void* writer_thread(void* arg) {
     TQueue *queue = (TQueue*)arg;
-    // pthread_t thread_id = pthread_self(); // Remove unused variable
+    // pthread_t thread_id = pthread_self(); 
 
     while (1) {
         char *msg = "Hello from thread";
