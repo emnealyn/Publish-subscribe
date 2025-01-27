@@ -15,18 +15,18 @@ TQueue* createQueue(int size) {
 }
 
 void addMsg(TQueue *queue, void *msg) {
-    printf("[IN] addMsg\n");
+    //printf("[IN] addMsg\n");
     pthread_mutex_lock(&queue->rw_lock); // Lock the mutex
-    printf("[IN] addMsg 1\n");
+    //printf("[IN] addMsg 1\n");
 
     //if queue is full, wait until there is space
 
     while (queue->current_size >= queue->max_size) {
-        printf("[MID] addMsg\n");
+        //printf("[MID] addMsg\n");
         pthread_cond_wait(&queue->cond, &queue->rw_lock);
     }
 
-    printf("[IN] addMsg 2\n");
+    //printf("[IN] addMsg 2\n");
 
     // Create a new message
 
@@ -54,7 +54,7 @@ void addMsg(TQueue *queue, void *msg) {
         sub = sub->next;
     }
     
-    printf("[OUT] addMsg\n");
+    //printf("[OUT] addMsg\n");
     pthread_mutex_unlock(&queue->rw_lock);
     pthread_cond_broadcast(&queue->cond);
 }
@@ -92,9 +92,9 @@ void removeMsg(TQueue *queue, void *msg) {
 }
 
 void* getMsg(TQueue *queue, pthread_t thread) {
-    printf("[IN] getMsg\n");
+    //printf("[IN] getMsg\n");
     pthread_mutex_lock(&queue->rw_lock); // Lock the mutex
-    printf("[IN] getMsg 1\n");
+    //printf("[IN] getMsg 1\n");
 
     // Find the subscriber
 
@@ -109,7 +109,7 @@ void* getMsg(TQueue *queue, pthread_t thread) {
     // If the thread is not subscribed, return NULL
 
     if (sub == NULL) {
-        printf("Thread is not subscribed\n");
+        //printf("Thread is not subscribed\n");
         pthread_mutex_unlock(&queue->rw_lock);
         return NULL;
     }
@@ -117,11 +117,11 @@ void* getMsg(TQueue *queue, pthread_t thread) {
     // Wait until there is a message available
 
     while (sub->head == NULL) {
-        printf("[MID] getMsg\n");
+        //printf("[MID] getMsg\n");
         pthread_cond_wait(&queue->cond, &queue->rw_lock);
     }
 
-    printf("[IN] getMsg 2\n");
+    //printf("[IN] getMsg 2\n");
 
     // Get the message
 
@@ -136,7 +136,7 @@ void* getMsg(TQueue *queue, pthread_t thread) {
     }
 
 
-    printf("[OUT] getMsg\n");
+    //printf("[OUT] getMsg\n");
     pthread_mutex_unlock(&queue->rw_lock);
     pthread_cond_broadcast(&queue->cond);
 
@@ -178,9 +178,9 @@ void subscribe(TQueue *queue, pthread_t thread) {
 }
 
 void unsubscribe(TQueue *queue, pthread_t thread) {
-    printf("[IN] unsub\n");
+    //printf("[IN] unsub\n");
     pthread_mutex_lock(&queue->rw_lock);
-    printf("[IN] unsub 2\n");
+    //printf("[IN] unsub 2\n");
 
     Subscriber *prev = NULL;
     Subscriber *current = queue->subscribers;
@@ -198,7 +198,7 @@ void unsubscribe(TQueue *queue, pthread_t thread) {
     }
 
     if (!is_subscribed) {
-        printf("Thread is not subscribed\n");
+        //printf("Thread is not subscribed\n");
         pthread_mutex_unlock(&queue->rw_lock);
         return; // Thread is not subscribed, do nothing
     }
@@ -225,10 +225,10 @@ void unsubscribe(TQueue *queue, pthread_t thread) {
     free(current);
     queue->subscriber_count--;
 
-    printf("[IN] unsub 3\n");
+    //printf("[IN] unsub 3\n");
 
     pthread_mutex_unlock(&queue->rw_lock);
-    printf("[OUT] unsub\n");
+    //printf("[OUT] unsub\n");
 }
 
 int getAvailable(TQueue *queue, pthread_t thread) {
