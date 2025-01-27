@@ -15,18 +15,13 @@ TQueue* createQueue(int size) {
 }
 
 void addMsg(TQueue *queue, void *msg) {
-    //printf("[IN] addMsg\n");
     pthread_mutex_lock(&queue->rw_lock); // Lock the mutex
-    //printf("[IN] addMsg 1\n");
 
     //if queue is full, wait until there is space
 
     while (queue->current_size >= queue->max_size) {
-        //printf("[MID] addMsg\n");
         pthread_cond_wait(&queue->cond, &queue->rw_lock);
     }
-
-    //printf("[IN] addMsg 2\n");
 
     // Create a new message
 
@@ -54,7 +49,6 @@ void addMsg(TQueue *queue, void *msg) {
         sub = sub->next;
     }
     
-    //printf("[OUT] addMsg\n");
     pthread_mutex_unlock(&queue->rw_lock);
     pthread_cond_broadcast(&queue->cond);
 }
@@ -92,9 +86,8 @@ void removeMsg(TQueue *queue, void *msg) {
 }
 
 void* getMsg(TQueue *queue, pthread_t thread) {
-    //printf("[IN] getMsg\n");
+
     pthread_mutex_lock(&queue->rw_lock); // Lock the mutex
-    //printf("[IN] getMsg 1\n");
 
     // Find the subscriber
 
@@ -117,11 +110,8 @@ void* getMsg(TQueue *queue, pthread_t thread) {
     // Wait until there is a message available
 
     while (sub->head == NULL) {
-        //printf("[MID] getMsg\n");
         pthread_cond_wait(&queue->cond, &queue->rw_lock);
     }
-
-    //printf("[IN] getMsg 2\n");
 
     // Get the message
 
@@ -135,8 +125,6 @@ void* getMsg(TQueue *queue, pthread_t thread) {
         queue->current_size--;
     }
 
-
-    //printf("[OUT] getMsg\n");
     pthread_mutex_unlock(&queue->rw_lock);
     pthread_cond_broadcast(&queue->cond);
 
@@ -178,9 +166,7 @@ void subscribe(TQueue *queue, pthread_t thread) {
 }
 
 void unsubscribe(TQueue *queue, pthread_t thread) {
-    //printf("[IN] unsub\n");
     pthread_mutex_lock(&queue->rw_lock);
-    //printf("[IN] unsub 2\n");
 
     Subscriber *prev = NULL;
     Subscriber *current = queue->subscribers;
@@ -225,10 +211,7 @@ void unsubscribe(TQueue *queue, pthread_t thread) {
     free(current);
     queue->subscriber_count--;
 
-    //printf("[IN] unsub 3\n");
-
     pthread_mutex_unlock(&queue->rw_lock);
-    //printf("[OUT] unsub\n");
 }
 
 int getAvailable(TQueue *queue, pthread_t thread) {
