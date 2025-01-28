@@ -10,7 +10,6 @@
 #include <pthread.h>
 
 struct Message {
-    pthread_mutex_t lock;
     void *data;
     int remaining_read_count;
     struct Message *next;
