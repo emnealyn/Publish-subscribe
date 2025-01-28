@@ -16,22 +16,20 @@ TQueue* createQueue(int size) {
 }
 
 void addMsg(TQueue *queue, void *msg) {
+    //printf("[IN] AddMsg 1");
     pthread_mutex_lock(&queue->rw_lock); // Lock the mutex
-
-    //if queue is full, wait until there is space
-
+    //printf("[IN] AddMsg 2");
+    // If queue is full, wait until there is space
     while (queue->current_size >= queue->max_size) {
         pthread_cond_wait(&queue->cond, &queue->rw_lock);
     }
 
     // Create a new message
-
     Message *new_msg = (Message *)malloc(sizeof(Message));
     new_msg->data = msg;
     new_msg->next = NULL;   
 
     // Add the message to the queue
-
     if (queue->tail == NULL) {
         queue->head = new_msg;
     } else {
@@ -41,7 +39,6 @@ void addMsg(TQueue *queue, void *msg) {
     queue->current_size++;
 
     // Inform all subscribers
-
     Subscriber *sub = queue->subscribers;
     while (sub != NULL) {
         if (sub->head == NULL) {
@@ -51,11 +48,12 @@ void addMsg(TQueue *queue, void *msg) {
     }
     
     pthread_mutex_unlock(&queue->rw_lock);
+    //printf("[OUT] AddMsg 3");
     pthread_cond_broadcast(&queue->cond);
 }
 
 void unsafeRemoveMsg(TQueue *queue, void *msg) {
-    printf("[IN] RemoveMessege");
+    //printf("[IN] RemoveMessege");
     Message *prev = NULL;
     Message *current = queue->head;
 
@@ -95,8 +93,9 @@ void removeMsg(TQueue *queue, void *msg) {
 }
 
 void* getMsg(TQueue *queue, pthread_t thread) {
+    //printf("[IN] GetMsg 1");
     pthread_mutex_lock(&queue->rw_lock); // Lock the mutex
-
+    //printf("[IN] GetMsg 2");
     // Find the subscriber
     Subscriber *sub = queue->subscribers;
     while (sub != NULL) {
@@ -135,7 +134,7 @@ void* getMsg(TQueue *queue, pthread_t thread) {
 
     pthread_mutex_unlock(&queue->rw_lock);
     pthread_cond_broadcast(&queue->cond);
-
+    //printf("[OUT] GetMsg 3");
     // Return the message data
     if (msg != NULL) {
         void *data = msg->data;
@@ -150,9 +149,9 @@ void* getMsg(TQueue *queue, pthread_t thread) {
 
 void subscribe(TQueue *queue, pthread_t thread) {
     if (queue == NULL) return;
-
+    //printf("[IN] Subscribe 1");
     pthread_mutex_lock(&queue->rw_lock);
-
+    //printf("[IN] Subscribe 2");
     // Check if the thread is already subscribed
 
     Subscriber *sub = queue->subscribers;
@@ -173,14 +172,15 @@ void subscribe(TQueue *queue, pthread_t thread) {
     queue->subscribers = new_sub;
     queue->subscriber_count++;
 
-    pthread_mutex_unlock(&queue->rw_lock);
+    pthread_mutex_unlock(&queue->rw_lock);    
+    //printf("[OUT] Subscribe 3");
 }
 
 void unsubscribe(TQueue *queue, pthread_t thread) {
     if (queue == NULL) return;
-
+    //printf("[IN] Unsubscribe 1");
     pthread_mutex_lock(&queue->rw_lock);
-
+    //printf("[IN] Unsubscribe 2");
     Subscriber *prev = NULL;
     Subscriber *current = queue->subscribers;
 
@@ -225,11 +225,13 @@ void unsubscribe(TQueue *queue, pthread_t thread) {
     queue->subscriber_count--;
 
     pthread_mutex_unlock(&queue->rw_lock);
+    //printf("[OUT] Unsubscribe 3");
 }
 
 int getAvailable(TQueue *queue, pthread_t thread) {
-
+    //printf("[IN] GetAvailable 1");
     pthread_mutex_lock(&queue->rw_lock);
+    //printf("[IN] GetAvailable 2");
 
     Subscriber *sub = queue->subscribers;
     while (sub != NULL) {
@@ -253,6 +255,7 @@ int getAvailable(TQueue *queue, pthread_t thread) {
     }
 
     pthread_mutex_unlock(&queue->rw_lock);
+    //printf("[OUT] GetAvailable 3");
     return count;
 }
 
@@ -262,18 +265,32 @@ void setSize(TQueue *queue, int size) {
     pthread_mutex_lock(&queue->rw_lock);
 
     // If the new size is smaller than the current number of messages, remove the oldest messages
-
     while (queue->current_size > size) {
         if (queue->head != NULL) {
-            void *old_msg_data = queue->head->data;
-            unsafeRemoveMsg(queue, old_msg_data);
+            Message *old_msg = queue->head;
+            queue->head = old_msg->next;
+            if (queue->head == NULL) {
+                queue->tail = NULL;
+            }
+
+            // Adjust subscribers' heads
+            Subscriber *sub = queue->subscribers;
+            while (sub != NULL) {
+                if (sub->head == old_msg) {
+                    sub->head = old_msg->next;
+                }
+                sub = sub->next;
+            }
+
+            free(old_msg->data);
+            free(old_msg);
+            queue->current_size--;
         }
     }
 
     queue->max_size = size;
 
     // If the new size is larger, inform writers that there are free slots
-    
     if (queue->current_size < size) {
         pthread_cond_broadcast(&queue->cond);
     }

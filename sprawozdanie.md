@@ -17,14 +17,12 @@ W tym punkcie przedstawiam struktury danych zaprojektowane i użyte w implementa
 
    ```c
    struct Message {
-       pthread_mutex_t lock;
        void *data;
        int remaining_read_count;
        struct Message *next;
    };
    ```
 
-   - `lock`: mutex do synchronizacji dostępu do wiadomości.
    - `data`: wskaźnik na dane wiadomości.
    - `remaining_read_count`: liczba subskrybentów, którzy jeszcze nie przeczytali wiadomości.
    - `next`: wskaźnik na następną wiadomość w kolejce.
