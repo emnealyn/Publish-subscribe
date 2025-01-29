@@ -27,7 +27,8 @@ void addMsg(TQueue *queue, void *msg) {
     // Create a new message
     Message *new_msg = (Message *)malloc(sizeof(Message));
     new_msg->data = msg;
-    new_msg->next = NULL;   
+    new_msg->next = NULL;
+    new_msg->remaining_read_count = queue->subscriber_count;
 
     // Add the message to the queue
     if (queue->tail == NULL) {
