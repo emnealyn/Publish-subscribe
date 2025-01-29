@@ -54,7 +54,6 @@ void addMsg(TQueue *queue, void *msg) {
 }
 
 void unsafeRemoveMsg(TQueue *queue, void *msg) {
-    //printf("[IN] RemoveMessege");
     Message *prev = NULL;
     Message *current = queue->head;
 
@@ -71,6 +70,15 @@ void unsafeRemoveMsg(TQueue *queue, void *msg) {
             // If the message is the last one, update the tail pointer
             if (current->next == NULL) {
                 queue->tail = prev;
+            }
+
+            // Adjust subscribers' heads
+            Subscriber *sub = queue->subscribers;
+            while (sub != NULL) {
+                if (sub->head == current) {
+                    sub->head = current->next;
+                }
+                sub = sub->next;
             }
 
             // Decrease the current size of the queue
@@ -95,6 +103,7 @@ void removeMsg(TQueue *queue, void *msg) {
 
 void* getMsg(TQueue *queue, pthread_t thread) {
     //printf("[IN] GetMsg 1");
+
     pthread_mutex_lock(&queue->rw_lock); // Lock the mutex
     //printf("[IN] GetMsg 2");
     // Find the subscriber
@@ -122,28 +131,26 @@ void* getMsg(TQueue *queue, pthread_t thread) {
     if (msg != NULL) {
         sub->head = sub->head->next;
         msg->remaining_read_count--;
+        void *data = msg->data;
         if (msg->remaining_read_count == 0) {
-            if (queue->head == msg) {
-                queue->head = msg->next;
-                if (queue->head == NULL) {
-                    queue->tail = NULL;
-                }
-            }
-            queue->current_size--;
+            unsafeRemoveMsg(queue, msg);
         }
+        pthread_mutex_unlock(&queue->rw_lock);
+        pthread_cond_broadcast(&queue->cond);
+        return data;
     }
 
     pthread_mutex_unlock(&queue->rw_lock);
     pthread_cond_broadcast(&queue->cond);
     //printf("[OUT] GetMsg 3");
     // Return the message data
-    if (msg != NULL) {
-        void *data = msg->data;
-        if (msg->remaining_read_count == 0) {
-            free(msg);
-        }
-        return data;
-    }
+    // if (msg != NULL) {
+    //     void *data = msg->data;
+    //     if (msg->remaining_read_count == 0) {
+    //         free(msg);
+    //     }
+    //     return data;
+    // }
 
     return NULL;
 }
@@ -210,7 +217,7 @@ void unsubscribe(TQueue *queue, pthread_t thread) {
         // pthread_mutex_lock(&msg->lock);
         msg->remaining_read_count--;
         if (msg->remaining_read_count == 0) {
-            unsafeRemoveMsg(queue, msg->data);
+            unsafeRemoveMsg(queue, msg);
         }
         // pthread_mutex_unlock(&msg->lock);
         msg = msg->next;
@@ -257,6 +264,7 @@ int getAvailable(TQueue *queue, pthread_t thread) {
 
     pthread_mutex_unlock(&queue->rw_lock);
     //printf("[OUT] GetAvailable 3");
+    printf("Count: %d\n", count);
     return count;
 }
 
@@ -266,6 +274,10 @@ void setSize(TQueue *queue, int size) {
     pthread_mutex_lock(&queue->rw_lock);
 
     // If the new size is smaller than the current number of messages, remove the oldest messages
+
+    // while (queue->current_size > size) {
+    //     unsafeRemoveMsg(queue, queue->head);
+    // }
     while (queue->current_size > size) {
         if (queue->head != NULL) {
             Message *old_msg = queue->head;
