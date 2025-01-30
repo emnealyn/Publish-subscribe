@@ -24,13 +24,8 @@ void addMsg(TQueue *queue, void *msg) {
         return;
     }
 
-    if (queue->current_size >= queue->max_size) {
+    while (queue->current_size >= queue->max_size) {
         pthread_cond_wait(&queue->not_full, &queue->rw_lock);
-    }
-
-    if (queue->subscriber_count == 0){
-        pthread_mutex_unlock(&queue->rw_lock);
-        return;
     }
 
     Message *new_msg = (Message *)malloc(sizeof(Message));
@@ -62,7 +57,7 @@ void unsafeRemoveMsg(TQueue *queue, void *msg) {
     Message *current = queue->head;
 
     while (current != NULL) {
-        if (current->data == msg) {
+        if (current == msg) {
             if (prev == NULL) {
                 queue->head = current->next;
             } else {
@@ -91,6 +86,7 @@ void unsafeRemoveMsg(TQueue *queue, void *msg) {
         current = current->next;
 
     }
+
 }
 
 void removeMsg(TQueue *queue, void *msg) {
@@ -107,7 +103,7 @@ void* getMsg(TQueue *queue, pthread_t thread) {
     while (sub != NULL) {
 
         if (pthread_equal(sub->thread, thread)) {
-            if (sub->head == NULL) {
+            while (sub->head == NULL) {
                 pthread_cond_wait(&queue->not_empty, &queue->rw_lock);
             }
             Message *msg = sub->head;
