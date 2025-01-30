@@ -50,7 +50,8 @@ W tym punkcie przedstawiam struktury danych zaprojektowane i użyte w implementa
        Message *head;
        Message *tail;
        pthread_mutex_t rw_lock;
-       pthread_cond_t cond;
+       pthread_cond_t not_empty;
+       pthread_cond_t not_full;
        int subscriber_count;
        Subscriber *subscribers;
    };
@@ -61,7 +62,8 @@ W tym punkcie przedstawiam struktury danych zaprojektowane i użyte w implementa
    - `head`: wskaźnik na pierwszą wiadomość w kolejce.
    - `tail`: wskaźnik na ostatnią wiadomość w kolejce.
    - `rw_lock`: mutex do synchronizacji dostępu do kolejki.
-   - `cond`: zmienna warunkowa do synchronizacji wątków.
+   - `not_empty`: zmienna warunkowa do synchronizacji wątków (można odczytać nowe wiadomości).
+   - `not_full`: zmienna warunkowa do synchronizacji wątków (można dodać nowe wiadomości).
    - `subscriber_count`: liczba subskrybentów.
    - `subscribers`: wskaźnik na listę subskrybentów.
 
