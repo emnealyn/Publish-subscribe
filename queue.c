@@ -3,7 +3,9 @@
 #include <stdio.h>
 
 TQueue* createQueue(int size) {
-    TQueue *queue = (TQueue *)malloc(sizeof(TQueue)); 
+    if (size <= 0) return NULL;
+    TQueue *queue = (TQueue *)malloc(sizeof(TQueue));
+    if (queue == NULL) return NULL; 
     queue->max_size = size;
     queue->current_size = 0;
     queue->head = NULL;
@@ -17,7 +19,6 @@ TQueue* createQueue(int size) {
 }
 
 void addMsg(TQueue *queue, void *msg) {
-    //printf("[INADD]\n");
     pthread_mutex_lock(&queue->rw_lock); 
 
     if (queue->subscriber_count == 0){
@@ -37,10 +38,8 @@ void addMsg(TQueue *queue, void *msg) {
 
     if (queue->tail == NULL) {
         queue->head = new_msg;
-        //printf("%p : %p\n", new_msg, queue->head);
     } else {
         queue->tail->next = new_msg;
-                //printf("%p : %p\n", new_msg, queue->tail->next);
     }
     queue->tail = new_msg;
     queue->current_size++;
@@ -53,52 +52,59 @@ void addMsg(TQueue *queue, void *msg) {
         sub = sub->next;
     }
 
-    //printf("[OUTADD]\n");
-
     pthread_cond_broadcast(&queue->not_empty);
     pthread_mutex_unlock(&queue->rw_lock);
 }
 
 void unsafeRemoveMsg(TQueue *queue, void *msg) {
-    //printf("[IN]\n");
+    if (queue == NULL) return;
+    if (msg == NULL) return;
+
     Message *prev = NULL;
     Message *current = queue->head;
 
     while (current) {
-        //printf("[INWH]\n");
-        //printf("%p : %p\n", current->data, msg);
         if (current->data == msg) {
-            //printf("[INIF]\n");
-            if (prev == NULL) {
-                queue->head = current->next;
-            } else {
-                prev->next = current->next;
-            }
-
-            if (current->next == NULL) {
-                queue->tail = prev;
-            }
-
-            Subscriber *sub = queue->subscribers;
-            while (sub != NULL) {
-                if (sub->head == current) {
-                    sub->head = current->next;
-                }
-                sub = sub->next;
-            }
-
-            queue->current_size--;
-            free(current);
-            pthread_cond_signal(&queue->not_full);
             break;
         }
-
         prev = current;
         current = current->next;
-
     }
 
-    //printf("[OUT]\n");
+    if (!current) {
+        current = queue->head;
+        prev = NULL;
+        while (current) {
+            if (current->data == msg) {
+                break;
+            }
+            prev = current;
+            current = current->next;
+        }
+    }
+
+    if(!current) return;
+
+    if (prev == NULL) {
+        queue->head = current->next;
+    } else {
+        prev->next = current->next;
+    }
+
+    if (current->next == NULL) {
+        queue->tail = prev;
+    }
+
+    Subscriber *sub = queue->subscribers;
+    while (sub != NULL) {
+        if (sub->head == current) {
+            sub->head = current->next;
+        }
+        sub = sub->next;
+    }
+
+    queue->current_size--;
+    pthread_cond_signal(&queue->not_full);
 
 }
 
@@ -119,7 +125,6 @@ void* getMsg(TQueue *queue, pthread_t thread) {
             while (sub->head == NULL) {
                 pthread_cond_wait(&queue->not_empty, &queue->rw_lock);
             }
-            //printf("[INGET]\n");
             Message *msg = sub->head;
 
             if (msg != NULL) {
@@ -129,7 +134,6 @@ void* getMsg(TQueue *queue, pthread_t thread) {
                 if (msg->remaining_read_count == 0) {
                     unsafeRemoveMsg(queue, msg->data);
                 }
-                //printf("[OUTGET]\n");
                 pthread_mutex_unlock(&queue->rw_lock);
                 return data;
             }
@@ -195,7 +199,7 @@ void unsubscribe(TQueue *queue, pthread_t thread) {
     while (msg != NULL) {
         msg->remaining_read_count--;
         if (msg->remaining_read_count == 0) {
-            unsafeRemoveMsg(queue, msg);
+            unsafeRemoveMsg(queue, msg->data);
         }
         msg = msg->next;
     }
@@ -206,7 +210,6 @@ void unsubscribe(TQueue *queue, pthread_t thread) {
         prev->next = current->next;
     }
 
-    free(current);
     queue->subscriber_count--;
 
     pthread_mutex_unlock(&queue->rw_lock);
