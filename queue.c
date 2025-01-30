@@ -329,22 +329,3 @@ void destroyQueue(TQueue *queue) {
     free(queue);
 }
 
-void displayQueueInfo(TQueue *queue) {
-    if (queue == NULL) return;
-
-    printf("Queue size: %d\n", queue->max_size);
-    printf("Current size: %d\n", queue->current_size);
-    printf("Number of subscribers: %d\n", queue->subscriber_count);
-
-    Subscriber *sub = queue->subscribers;
-    while (sub != NULL) {
-        printf("Subscriber: %ld\n", sub->thread);
-        Message *msg = sub->head;
-        while (msg != NULL) {
-            printf("Message: %p\n", msg->data);
-            msg = msg->next;
-        }
-        sub = sub->next;
-    }
-
-}
