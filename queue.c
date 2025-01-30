@@ -17,6 +17,7 @@ TQueue* createQueue(int size) {
 }
 
 void addMsg(TQueue *queue, void *msg) {
+    //printf("[INADD]\n");
     pthread_mutex_lock(&queue->rw_lock); 
 
     if (queue->subscriber_count == 0){
@@ -33,10 +34,13 @@ void addMsg(TQueue *queue, void *msg) {
     new_msg->next = NULL;
     new_msg->remaining_read_count = queue->subscriber_count;
 
+
     if (queue->tail == NULL) {
         queue->head = new_msg;
+        //printf("%p : %p\n", new_msg, queue->head);
     } else {
         queue->tail->next = new_msg;
+                //printf("%p : %p\n", new_msg, queue->tail->next);
     }
     queue->tail = new_msg;
     queue->current_size++;
@@ -48,16 +52,23 @@ void addMsg(TQueue *queue, void *msg) {
         }
         sub = sub->next;
     }
+
+    //printf("[OUTADD]\n");
+
     pthread_cond_broadcast(&queue->not_empty);
     pthread_mutex_unlock(&queue->rw_lock);
 }
 
 void unsafeRemoveMsg(TQueue *queue, void *msg) {
+    //printf("[IN]\n");
     Message *prev = NULL;
     Message *current = queue->head;
 
-    while (current != NULL) {
-        if (current == msg) {
+    while (current) {
+        //printf("[INWH]\n");
+        //printf("%p : %p\n", current->data, msg);
+        if (current->data == msg) {
+            //printf("[INIF]\n");
             if (prev == NULL) {
                 queue->head = current->next;
             } else {
@@ -87,6 +98,8 @@ void unsafeRemoveMsg(TQueue *queue, void *msg) {
 
     }
 
+    //printf("[OUT]\n");
+
 }
 
 void removeMsg(TQueue *queue, void *msg) {
@@ -106,6 +119,7 @@ void* getMsg(TQueue *queue, pthread_t thread) {
             while (sub->head == NULL) {
                 pthread_cond_wait(&queue->not_empty, &queue->rw_lock);
             }
+            //printf("[INGET]\n");
             Message *msg = sub->head;
 
             if (msg != NULL) {
@@ -113,8 +127,9 @@ void* getMsg(TQueue *queue, pthread_t thread) {
                 msg->remaining_read_count--;
                 void *data = msg->data;
                 if (msg->remaining_read_count == 0) {
-                    unsafeRemoveMsg(queue, msg);
+                    unsafeRemoveMsg(queue, msg->data);
                 }
+                //printf("[OUTGET]\n");
                 pthread_mutex_unlock(&queue->rw_lock);
                 return data;
             }
@@ -291,4 +306,3 @@ void destroyQueue(TQueue *queue) {
 
     free(queue);
 }
-
