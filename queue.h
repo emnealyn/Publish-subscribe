@@ -23,15 +23,14 @@ struct Subscriber {
 };
 typedef struct Subscriber Subscriber;
 
-
-
 struct TQueue {
 	int max_size;
     int current_size;
     Message *head;
     Message *tail;
-    pthread_mutex_t rw_lock; // Add this line
-    pthread_cond_t cond;
+    pthread_mutex_t rw_lock; 
+    pthread_cond_t not_empty;
+    pthread_cond_t not_full;
     int subscriber_count;
     Subscriber *subscribers;
 };
