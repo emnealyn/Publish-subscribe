@@ -77,7 +77,9 @@ Poniżej znajdują się opisy funkcji zawartych w implementacji:
 
 # Algorytm / dodatkowy opis
 
-Algorytm implementuje wzorzec publish-subscribe z użyciem współbieżnych struktur danych. Kolejka jest zabezpieczona mutexem `rw_lock`, a wątki synchronizują się za pomocą zmiennej warunkowej `cond`.
+Algorytm implementuje wzorzec publish-subscribe z użyciem współbieżnych struktur danych. Kolejka jest zabezpieczona mutexem `rw_lock`, a wątki synchronizują się za pomocą zmiennych warunkowych `not_full` i `not_empty`.
+
+![image](https://github.com/user-attachments/assets/e31acd49-1267-4100-bb23-2b9fd65fa294)
 
 1. **Dodawanie wiadomości**:
    - Wątki dodające wiadomości (`writer_thread`) czekają, jeśli kolejka jest pełna.
