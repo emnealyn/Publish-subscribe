@@ -130,10 +130,78 @@ int testAvailable() {
      return 0;
 }
 
+int test2() {
+    TQueue *q;
+    int p;
+    q = createQueue(3);
+    pthread_t t1=101, t2=102, t3=103;
+    int *m1, *m2, *m3;
+     m1 = malloc(sizeof(int)); *m1 = 10;
+     m2 = malloc(sizeof(int)); *m2 = 20;
+     m3 = malloc(sizeof(int)); *m3 = 30;
+    subscribe(q, t1);
+    addMsg(q, m1);
+    subscribe(q, t2);
+    addMsg(q, m2);
+    subscribe(q, t3);
+    addMsg(q, m3);
+    getAvailable(q, t1);
+    getAvailable(q, t2);
+    getAvailable(q, t3);
+    removeMsg(q, m2);
+    p = getAvailable(q, t1);
+    printf("%d\n", p);
+    getAvailable(q, t2);
+    printf("OK2\n");
+    return 0;
+
+}
+
+int test4() {
+    TQueue *q;
+    int p;
+    q = createQueue(3);
+    int *m1, *m2, *m3;
+    m1 = malloc(sizeof(int)); *m1 = 10;
+    m2 = malloc(sizeof(int)); *m2 = 20;
+    m3 = malloc(sizeof(int)); *m3 = 30;
+    pthread_t t1=101, t2=102, t3=103;
+    subscribe(q, t1);
+    addMsg(q, m1);
+    subscribe(q, t2);
+    addMsg(q, m2);
+    subscribe(q, t3);
+    addMsg(q, m3);
+    getMsg(q, t1);
+    p = getAvailable(q, t1);
+    printf("%d\n", p);
+    printf("OK4\n");
+    return 0;
+}
+
+int test3(){
+    TQueue *q;
+    q = createQueue(2);
+    int *m1, *m2, *m3;
+    m1 = malloc(sizeof(int)); *m1 = 10;
+    m2 = malloc(sizeof(int)); *m2 = 20;
+    m3 = malloc(sizeof(int)); *m3 = 30;
+    addMsg(q, m1);
+    addMsg(q, m2);
+    printf("mid\n");
+    addMsg(q, m3);
+    removeMsg(q, m2);
+    printf("OK3\n");
+    return 0;
+}
+
 
 
 int main() {
     testAvailable();
+    test2();
+    test3();
+    test4();
     // TQueue *q = createQueue(10);
 
     // #define NUM 30
